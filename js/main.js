@@ -156,19 +156,48 @@ function initContactForm() {
     [nameError, emailError, subjectError, messageError].forEach(span => {
       if (span) span.textContent = '';
     });
-    statusBox.className = 'form-status';
-    statusBox.textContent = '';
-    statusBox.style.display = 'none';
+    if (statusBox) {
+      statusBox.className = 'form-status';
+      statusBox.textContent = '';
+      statusBox.style.display = 'none';
+    }
   };
 
-  // Realtime clear on typing
+  // Reset errors when the form is reset
+  form.addEventListener('reset', clearErrors);
+
+  // Clear validation errors when user navigates away from Contact section via links
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', () => {
+      if (link.getAttribute('href') !== '#contact') {
+        clearErrors();
+      }
+    });
+  });
+
+  // Clear validation errors when user scrolls away from Contact section
+  const contactSection = document.getElementById('contact');
+  if (contactSection && 'IntersectionObserver' in window) {
+    const contactObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) {
+          clearErrors();
+        }
+      });
+    }, { threshold: 0.05 });
+    contactObserver.observe(contactSection);
+  }
+
+  // Realtime clear on typing or focus
   [nameInput, emailInput, subjectInput, messageInput].forEach(input => {
     if (!input) return;
-    input.addEventListener('input', () => {
+    const handleFieldInteraction = () => {
       input.classList.remove('invalid');
       const errEl = document.getElementById(`${input.id}Error`) || (input.id === 'fullName' ? nameError : null);
       if (errEl) errEl.textContent = '';
-    });
+    };
+    input.addEventListener('input', handleFieldInteraction);
+    input.addEventListener('focus', handleFieldInteraction);
   });
 
   form.addEventListener('submit', async (e) => {
